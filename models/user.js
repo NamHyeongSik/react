@@ -21,7 +21,9 @@ const userSchema = mongoose.Schema({
         type: Number,
         default: 0
     },
-    image:String,
+    image:{
+        type: String
+    },
     token:{
         type: String
     },
@@ -51,17 +53,19 @@ userSchema.methods.comparePassword = function(plainPassword, callback){
     });
 }
 
-userSchema.methods.generateToken = function(callback){
+userSchema.methods.generateToken = function(cb){
     let user = this;
 
     let token = jwt.sign(user._id.toHexString(), 'secretToken');
-    
+
     user.token = token;
-    user.save((err,user)=>{
-        if(err) return callback(err);
-        callback(null, user);
+
+    user.save(function(err, doc){
+        if(err) return cb(err);
+        cb(null, doc);
     })
 }
 
 const User = mongoose.model('User', userSchema);
+
 module.exports = {User};
