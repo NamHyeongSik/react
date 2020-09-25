@@ -30,7 +30,7 @@ const userSchema = mongoose.Schema({
     tokenExp:{
         type: Number
     }
-})
+});
 //pre도 mongoose에서 가져온 method, user에 data저장하기 전에 실행된다.
 userSchema.pre('save', function(next){
     let user = this;    //index.js에서 req.body로 받아오므로 this가 userSchema를 가리킬 수 있음.
@@ -41,10 +41,12 @@ userSchema.pre('save', function(next){
                 if(err) return next(err);
                 user.password = hash;
                 next();
-            })
-        })
+            });
+        });
+    }else{
+        next();
     }
-})
+});
 
 userSchema.methods.comparePassword = function(plainPassword, callback){
     bcrypt.compare(plainPassword, this.password, (err,isMatch)=>{
@@ -60,10 +62,21 @@ userSchema.methods.generateToken = function(cb){
 
     user.token = token;
 
-    user.save(function(err, doc){
+    user.save(function(err, user){
         if(err) return cb(err);
-        cb(null, doc);
-    })
+        cb(null, user);
+    });
+}
+
+userSchema.statics.findByToken = function(token, callback){
+    let user = this;
+
+    jwt.verify(token, 'secretToken', (err, decoded)=>{
+        user.findOne({"_id":decoded, "token": token}, (err,user)=>{
+            if(err) return callback(err);
+            callback(null, user);
+        });
+    });
 }
 
 const User = mongoose.model('User', userSchema);
